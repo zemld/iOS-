@@ -24,18 +24,26 @@ final class WishMakerViewController: UIViewController {
         static let maxValue: CGFloat = 1
         
         static let cornerRadius: CGFloat = 20
-        static let bottomAnchor: CGFloat = 40
+        static let bottomAnchor: CGFloat = 150
         static let leadingAnchor: CGFloat = 20
+        static let buttonBottomAnchor: CGFloat = 20
+        static let buttonHeight: CGFloat = 60
+        static let buttonWidth: CGFloat = 160
+        
+        static let animationTime: TimeInterval = 0.5
     }
     
     // MARK: - Variables
     var titleView = UILabel()
     var descriptionView = UILabel()
+    var toggleButton = UIButton()
+    var slidersStack = UIStackView()
     
-    // MARK: - Private variables
-    private var redValue: CGFloat = 0
-    private var greenValue: CGFloat = 0
-    private var blueValue: CGFloat = 0
+    var areSlidersVisible = true
+    
+    var redValue: CGFloat = 0
+    var greenValue: CGFloat = 0
+    var blueValue: CGFloat = 0
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -50,6 +58,7 @@ final class WishMakerViewController: UIViewController {
         configureTitle()
         configureDescription()
         configureSliders()
+        configureToggleButton()
     }
     
     private func configureTitle() {
@@ -80,25 +89,24 @@ final class WishMakerViewController: UIViewController {
     }
     
     private func configureSliders() {
-        let stack = UIStackView()
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .vertical
-        view.addSubview(stack)
-        stack.layer.cornerRadius = Constants.cornerRadius
-        stack.clipsToBounds = true
+        slidersStack.translatesAutoresizingMaskIntoConstraints = false
+        slidersStack.axis = .vertical
+        view.addSubview(slidersStack)
+        slidersStack.layer.cornerRadius = Constants.cornerRadius
+        slidersStack.clipsToBounds = true
         
         let sliderRed = CustomSlider(title: Constants.red, min: Constants.minValue, max: Constants.maxValue)
         let sliderGreen = CustomSlider(title: Constants.green, min: Constants.minValue, max: Constants.maxValue)
         let sliderBlue = CustomSlider(title: Constants.blue, min: Constants.minValue, max: Constants.maxValue)
         
         for slider in [sliderRed, sliderBlue, sliderGreen] {
-            stack.addArrangedSubview(slider)
+            slidersStack.addArrangedSubview(slider)
         }
         
         NSLayoutConstraint.activate([
-            stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingAnchor),
-            stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.bottomAnchor)
+            slidersStack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            slidersStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.leadingAnchor),
+            slidersStack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.bottomAnchor)
         ])
         
         sliderRed.valueChanged = { [weak self] value in
@@ -117,7 +125,38 @@ final class WishMakerViewController: UIViewController {
         }
     }
     
+    private func configureToggleButton() {
+        toggleButton.translatesAutoresizingMaskIntoConstraints = false
+        toggleButton.setTitle("Hide sliders", for: .normal)
+        toggleButton.backgroundColor = .systemBlue
+        toggleButton.layer.cornerRadius = Constants.cornerRadius
+        toggleButton.addTarget(self, action: #selector(buttonToggled), for: .touchUpInside)
+        
+        view.addSubview(toggleButton)
+        
+        NSLayoutConstraint.activate([
+            toggleButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            toggleButton.topAnchor.constraint(equalTo: slidersStack.bottomAnchor, constant: Constants.buttonBottomAnchor),
+            toggleButton.widthAnchor.constraint(equalToConstant: Constants.buttonWidth),
+            toggleButton.heightAnchor.constraint(equalToConstant: Constants.buttonHeight)])
+    }
+    
     private func updateBackgroundColor() {
         view.backgroundColor = UIColor(red: redValue, green: greenValue, blue: blueValue, alpha: 1)
+    }
+    
+    @objc
+    private func buttonToggled() {
+        self.areSlidersVisible.toggle()
+        self.toggleButton.isEnabled = false
+        
+        UIView.animate(withDuration: Constants.animationTime,
+                       animations: {
+            self.slidersStack.alpha = self.areSlidersVisible ? 1 : 0
+        }, completion: { [weak self] _ in
+            self?.toggleButton.isEnabled = true
+            self?.slidersStack.isHidden = !self!.areSlidersVisible
+            let buttonTitle = self!.areSlidersVisible ? "Hide sliders" : "Show sliders"
+            self?.toggleButton.setTitle(buttonTitle, for: .normal)})
     }
 }
